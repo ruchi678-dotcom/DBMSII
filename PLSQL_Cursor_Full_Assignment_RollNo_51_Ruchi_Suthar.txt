@@ -1,0 +1,1072 @@
+PL/SQL CURSOR - FULL ASSIGNMENT
+ROLL NO.: 51
+NAME: RUCHI SUTHAR
+Database Management System Laboratory
+
+============================================================
+GENERAL INSTRUCTIONS
+============================================================
+
+SET SERVEROUTPUT ON;
+
+Run Section 1 first.
+Each PL/SQL block ends with / on a separate line.
+
+============================================================
+SECTION 1 - SCHEMA SETUP
+============================================================
+
+CREATE TABLE publisher (
+    pub_id NUMBER(4),
+    pub_name VARCHAR2(40) NOT NULL,
+    city VARCHAR2(30),
+    country VARCHAR2(30),
+    CONSTRAINT pk_publisher PRIMARY KEY (pub_id)
+);
+
+CREATE TABLE book (
+    book_id NUMBER(5),
+    title VARCHAR2(60) NOT NULL,
+    category VARCHAR2(25),
+    price NUMBER(8,2),
+    stock NUMBER(4),
+    pub_id NUMBER(4),
+    CONSTRAINT pk_book PRIMARY KEY (book_id),
+    CONSTRAINT fk_book_pub FOREIGN KEY (pub_id)
+    REFERENCES publisher (pub_id)
+);
+
+CREATE TABLE lib_member (
+    member_id NUMBER(5),
+    member_name VARCHAR2(40) NOT NULL,
+    course VARCHAR2(20),
+    semester NUMBER(1),
+    join_date DATE,
+    CONSTRAINT pk_member PRIMARY KEY (member_id)
+);
+
+CREATE TABLE book_issue (
+    issue_id NUMBER(6),
+    book_id NUMBER(5),
+    member_id NUMBER(5),
+    issue_date DATE,
+    return_date DATE,
+    fine NUMBER(6,2) DEFAULT 0,
+    CONSTRAINT pk_issue PRIMARY KEY (issue_id),
+    CONSTRAINT fk_issue_book FOREIGN KEY (book_id)
+    REFERENCES book (book_id),
+    CONSTRAINT fk_issue_member FOREIGN KEY (member_id)
+    REFERENCES lib_member (member_id)
+);
+
+-------------------- PUBLISHER DATA --------------------
+
+INSERT INTO publisher VALUES (10, 'Oxford Press', 'London', 'UK');
+INSERT INTO publisher VALUES (20, 'Tech Bharat Pub', 'Pune', 'India');
+INSERT INTO publisher VALUES (30, 'McGraw Hill', 'New York', 'USA');
+INSERT INTO publisher VALUES (40, 'Vidya Prakashan', 'Ahmedabad', 'India');
+INSERT INTO publisher VALUES (50, 'Pearson Global', 'Toronto', 'Canada');
+
+-------------------- BOOK DATA --------------------
+
+INSERT INTO book VALUES (101,'Database System Concepts','Database',850.00,12,30);
+INSERT INTO book VALUES (102,'Let Us Learn PL/SQL','Database',420.50,4,20);
+INSERT INTO book VALUES (103,'Operating System Design','OS',690.00,8,30);
+INSERT INTO book VALUES (104,'Java Complete Reference','Programming',975.00,15,30);
+INSERT INTO book VALUES (105,'Python for Beginners','Programming',350.00,3,20);
+INSERT INTO book VALUES (106,'Computer Networks','Networking',780.00,6,10);
+INSERT INTO book VALUES (107,'Data Structures in C','Programming',560.00,2,40);
+INSERT INTO book VALUES (108,'Oracle SQL Handbook','Database',640.00,9,10);
+INSERT INTO book VALUES (109,'Software Engineering','SE',520.00,7,50);
+INSERT INTO book VALUES (110,'Web Technology Basics','Web',295.00,1,40);
+INSERT INTO book VALUES (111,'Advanced DBMS','Database',1150.00,5,50);
+INSERT INTO book VALUES (112,'Cloud Computing Essentials','Networking',880.00,4,10);
+
+-------------------- MEMBER DATA --------------------
+
+INSERT INTO lib_member VALUES (1,'Riya Shah','MSc IT',1,DATE '2026-01-10');
+INSERT INTO lib_member VALUES (2,'Arjun Mehta','MSc IT',3,DATE '2025-07-22');
+INSERT INTO lib_member VALUES (3,'Neha Patel','MCA',2,DATE '2026-02-05');
+INSERT INTO lib_member VALUES (4,'Karan Joshi','MCA',4,DATE '2025-06-15');
+INSERT INTO lib_member VALUES (5,'Sneha Desai','BCA',2,DATE '2026-03-01');
+INSERT INTO lib_member VALUES (6,'Vivek Nair','MSc IT',3,DATE '2025-12-11');
+INSERT INTO lib_member VALUES (7,'Ananya Rao','BCA',5,DATE '2026-01-28');
+INSERT INTO lib_member VALUES (8,'Manav Trivedi','MCA',2,DATE '2025-08-09');
+
+-------------------- BOOK ISSUE DATA --------------------
+
+INSERT INTO book_issue VALUES (5001,101,1,DATE '2026-06-01',DATE '2026-06-12',0);
+INSERT INTO book_issue VALUES (5002,104,2,DATE '2026-06-03',NULL,0);
+INSERT INTO book_issue VALUES (5003,102,3,DATE '2026-06-05',DATE '2026-06-30',50);
+INSERT INTO book_issue VALUES (5004,107,1,DATE '2026-06-10',NULL,0);
+INSERT INTO book_issue VALUES (5005,111,4,DATE '2026-06-11',DATE '2026-06-20',0);
+INSERT INTO book_issue VALUES (5006,103,5,DATE '2026-06-15',NULL,0);
+INSERT INTO book_issue VALUES (5007,108,2,DATE '2026-06-18',DATE '2026-07-15',90);
+INSERT INTO book_issue VALUES (5008,106,6,DATE '2026-07-01',NULL,0);
+INSERT INTO book_issue VALUES (5009,101,7,DATE '2026-07-04',DATE '2026-07-14',0);
+INSERT INTO book_issue VALUES (5010,112,8,DATE '2026-07-09',NULL,0);
+INSERT INTO book_issue VALUES (5011,105,3,DATE '2026-07-12',DATE '2026-07-19',0);
+INSERT INTO book_issue VALUES (5012,109,4,DATE '2026-07-20',NULL,0);
+
+COMMIT;
+
+-- Verification
+SELECT COUNT(*) FROM publisher;
+SELECT COUNT(*) FROM book;
+SELECT COUNT(*) FROM lib_member;
+SELECT COUNT(*) FROM book_issue;
+
+
+============================================================
+SECTION 2 - SIMPLE (EXPLICIT) CURSORS
+============================================================
+
+-------------------- Q1 --------------------
+-- File: 51_Section2Q1.sql
+-- Display book_id, title and price of every book.
+-- Use OPEN / FETCH / CLOSE and %NOTFOUND.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT book_id, title, price
+        FROM book;
+
+    v_book_id book.book_id%TYPE;
+    v_title book.title%TYPE;
+    v_price book.price%TYPE;
+
+BEGIN
+    OPEN c_book;
+
+    LOOP
+        FETCH c_book INTO v_book_id, v_title, v_price;
+
+        EXIT WHEN c_book%NOTFOUND;
+
+        DBMS_OUTPUT.PUT_LINE(
+            'ID: ' || v_book_id ||
+            ' | Title: ' || v_title ||
+            ' | Price: ' || v_price
+        );
+    END LOOP;
+
+    CLOSE c_book;
+END;
+/
+
+
+-------------------- Q2 --------------------
+-- File: 51_Section2Q2.sql
+-- Cursor FOR loop.
+-- Oracle automatically performs OPEN, FETCH and CLOSE.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT book_id, title, price
+        FROM book;
+
+BEGIN
+    FOR r IN c_book
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            'ID: ' || r.book_id ||
+            ' | Title: ' || r.title ||
+            ' | Price: ' || r.price
+        );
+    END LOOP;
+
+    -- OPEN, FETCH and CLOSE are performed automatically by Oracle.
+END;
+/
+
+
+-------------------- Q3 --------------------
+-- File: 51_Section2Q3.sql
+-- Use cursor_name%ROWTYPE.
+
+DECLARE
+    CURSOR c_pub IS
+        SELECT *
+        FROM publisher;
+
+    v_pub c_pub%ROWTYPE;
+
+BEGIN
+    OPEN c_pub;
+
+    LOOP
+        FETCH c_pub INTO v_pub;
+
+        EXIT WHEN c_pub%NOTFOUND;
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Name: ' || v_pub.pub_name ||
+            ' | City: ' || v_pub.city ||
+            ' | Country: ' || v_pub.country
+        );
+    END LOOP;
+
+    CLOSE c_pub;
+END;
+/
+
+
+-------------------- Q4 --------------------
+-- File: 51_Section2Q4.sql
+-- Books whose price is greater than 500.
+-- Print running serial number using %ROWCOUNT.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT book_id, title, price
+        FROM book
+        WHERE price > 500;
+
+    v_book_id book.book_id%TYPE;
+    v_title book.title%TYPE;
+    v_price book.price%TYPE;
+
+BEGIN
+    OPEN c_book;
+
+    LOOP
+        FETCH c_book INTO v_book_id, v_title, v_price;
+
+        EXIT WHEN c_book%NOTFOUND;
+
+        DBMS_OUTPUT.PUT_LINE(
+            c_book%ROWCOUNT || ' : ' ||
+            v_book_id || ' | ' ||
+            v_title || ' | ' ||
+            v_price
+        );
+    END LOOP;
+
+    CLOSE c_book;
+END;
+/
+
+
+-------------------- Q5 --------------------
+-- File: 51_Section2Q5.sql
+-- Format: 1. RIYA SHAH (MSc IT - Sem 1)
+
+DECLARE
+    CURSOR c_mem IS
+        SELECT member_name, course, semester
+        FROM lib_member;
+
+    v_count NUMBER := 0;
+
+BEGIN
+    FOR r IN c_mem
+    LOOP
+        v_count := v_count + 1;
+
+        DBMS_OUTPUT.PUT_LINE(
+            v_count || '. ' ||
+            UPPER(r.member_name) ||
+            ' (' || r.course ||
+            ' - Sem ' || r.semester || ')'
+        );
+    END LOOP;
+END;
+/
+
+
+-------------------- Q6 --------------------
+-- File: 51_Section2Q6.sql
+-- Calculate total stock value = price * stock.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT book_id, title, price, stock
+        FROM book;
+
+    v_value NUMBER;
+    v_total NUMBER := 0;
+
+BEGIN
+    FOR r IN c_book
+    LOOP
+        v_value := r.price * r.stock;
+        v_total := v_total + v_value;
+
+        DBMS_OUTPUT.PUT_LINE(
+            r.book_id || ' | ' ||
+            r.title || ' | Value: ' || v_value
+        );
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Grand Total: ' || v_total
+    );
+END;
+/
+
+
+-------------------- Q7 --------------------
+-- File: 51_Section2Q7.sql
+-- Check %ISOPEN before opening and after closing.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT book_id, title
+        FROM book;
+
+    v_book_id book.book_id%TYPE;
+    v_title book.title%TYPE;
+
+BEGIN
+    IF c_book%ISOPEN THEN
+        DBMS_OUTPUT.PUT_LINE('Cursor already open');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Cursor is not open');
+    END IF;
+
+    OPEN c_book;
+
+    LOOP
+        FETCH c_book INTO v_book_id, v_title;
+
+        EXIT WHEN c_book%NOTFOUND;
+    END LOOP;
+
+    CLOSE c_book;
+
+    IF c_book%ISOPEN THEN
+        DBMS_OUTPUT.PUT_LINE('Cursor is still open');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Cursor is FALSE after CLOSE');
+    END IF;
+END;
+/
+
+
+-------------------- Q8 --------------------
+-- File: 51_Section2Q8.sql
+-- Display issues where return_date IS NULL.
+-- If no rows: All books returned.
+
+DECLARE
+    CURSOR c_issue IS
+        SELECT issue_id, book_id, issue_date
+        FROM book_issue
+        WHERE return_date IS NULL;
+
+    v_issue_id book_issue.issue_id%TYPE;
+    v_book_id book_issue.book_id%TYPE;
+    v_issue_date book_issue.issue_date%TYPE;
+
+BEGIN
+    OPEN c_issue;
+
+    FETCH c_issue INTO v_issue_id, v_book_id, v_issue_date;
+
+    IF c_issue%NOTFOUND THEN
+        DBMS_OUTPUT.PUT_LINE('All books returned');
+    ELSE
+        LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                'Issue ID: ' || v_issue_id ||
+                ' | Book ID: ' || v_book_id ||
+                ' | Issue Date: ' ||
+                TO_CHAR(v_issue_date, 'DD-MON-YYYY')
+            );
+
+            FETCH c_issue INTO v_issue_id, v_book_id, v_issue_date;
+
+            EXIT WHEN c_issue%NOTFOUND;
+        END LOOP;
+    END IF;
+
+    CLOSE c_issue;
+END;
+/
+
+
+-------------------- Q9 --------------------
+-- File: 51_Section2Q9.sql
+-- Join BOOK and PUBLISHER.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT b.title, p.pub_name, p.country
+        FROM book b, publisher p
+        WHERE b.pub_id = p.pub_id;
+
+BEGIN
+    FOR r IN c_book
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            'Book: ' || r.title ||
+            ' | Publisher: ' || r.pub_name ||
+            ' | Country: ' || r.country
+        );
+    END LOOP;
+END;
+/
+
+
+-------------------- Q10 --------------------
+-- File: 51_Section2Q10.sql
+-- Stock less than 5 and REORDER.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT book_id, title, stock
+        FROM book
+        WHERE stock < 5;
+
+    v_count NUMBER := 0;
+
+BEGIN
+    FOR r IN c_book
+    LOOP
+        v_count := v_count + 1;
+
+        DBMS_OUTPUT.PUT_LINE(
+            r.book_id || ' | ' ||
+            r.title || ' | Stock: ' ||
+            r.stock || ' | REORDER'
+        );
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Total books to reorder: ' || v_count
+    );
+END;
+/
+
+
+-------------------- Q11 --------------------
+-- File: 51_Section2Q11.sql
+-- Display top 5 books by price.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT book_id, title, price
+        FROM book
+        ORDER BY price DESC;
+
+    v_book_id book.book_id%TYPE;
+    v_title book.title%TYPE;
+    v_price book.price%TYPE;
+
+BEGIN
+    OPEN c_book;
+
+    LOOP
+        FETCH c_book INTO v_book_id, v_title, v_price;
+
+        EXIT WHEN c_book%NOTFOUND;
+
+        DBMS_OUTPUT.PUT_LINE(
+            c_book%ROWCOUNT || ' : ' ||
+            v_book_id || ' | ' ||
+            v_title || ' | ' ||
+            v_price
+        );
+
+        EXIT WHEN c_book%ROWCOUNT = 5;
+    END LOOP;
+
+    CLOSE c_book;
+END;
+/
+
+
+-------------------- Q12 --------------------
+-- File: 51_Section2Q12.sql
+-- Increase stock of Database books by 10.
+
+DECLARE
+    CURSOR c_book IS
+        SELECT book_id, title, stock
+        FROM book
+        WHERE category = 'Database'
+        FOR UPDATE;
+
+    v_book_id book.book_id%TYPE;
+    v_title book.title%TYPE;
+    v_old_stock book.stock%TYPE;
+    v_new_stock book.stock%TYPE;
+
+BEGIN
+    OPEN c_book;
+
+    LOOP
+        FETCH c_book INTO v_book_id, v_title, v_old_stock;
+
+        EXIT WHEN c_book%NOTFOUND;
+
+        v_new_stock := v_old_stock + 10;
+
+        UPDATE book
+        SET stock = v_new_stock
+        WHERE CURRENT OF c_book;
+
+        DBMS_OUTPUT.PUT_LINE(
+            v_title ||
+            ' | Old Stock: ' || v_old_stock ||
+            ' | New Stock: ' || v_new_stock
+        );
+    END LOOP;
+
+    CLOSE c_book;
+
+    COMMIT;
+END;
+/
+
+
+============================================================
+SECTION 3 - PARAMETERISED CURSORS
+============================================================
+
+-------------------- Q1 --------------------
+-- File: 51_Section3Q1.sql
+-- Accept category from user.
+-- Test with Database and Programming.
+
+DECLARE
+    CURSOR c_book(p_cat VARCHAR2) IS
+        SELECT book_id, title, price
+        FROM book
+        WHERE UPPER(category) = UPPER(p_cat);
+
+BEGIN
+    FOR r IN c_book('&category')
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            r.book_id || ' | ' ||
+            r.title || ' | ' ||
+            r.price
+        );
+    END LOOP;
+END;
+/
+
+
+-------------------- Q2 --------------------
+-- File: 51_Section3Q2.sql
+-- Accept publisher name and compare case-insensitively.
+
+DECLARE
+    CURSOR c_book(p_pub_name VARCHAR2) IS
+        SELECT b.title, b.price
+        FROM book b, publisher p
+        WHERE b.pub_id = p.pub_id
+        AND UPPER(p.pub_name) = UPPER(p_pub_name);
+
+BEGIN
+    FOR r IN c_book('&publisher_name')
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            'Title: ' || r.title ||
+            ' | Price: ' || r.price
+        );
+    END LOOP;
+END;
+/
+
+
+-------------------- Q3 --------------------
+-- File: 51_Section3Q3.sql
+-- Test with minimum = 300 and maximum = 700.
+
+DECLARE
+    CURSOR c_book(
+        p_min NUMBER,
+        p_max NUMBER
+    ) IS
+        SELECT book_id, title, price
+        FROM book
+        WHERE price BETWEEN p_min AND p_max;
+
+BEGIN
+    FOR r IN c_book(&min_price, &max_price)
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            r.book_id || ' | ' ||
+            r.title || ' | ' ||
+            r.price
+        );
+    END LOOP;
+END;
+/
+
+-- Enter:
+-- min_price = 300
+-- max_price = 700
+
+
+-------------------- Q4 --------------------
+-- File: 51_Section3Q4.sql
+-- Accept course and semester.
+
+DECLARE
+    CURSOR c_mem(
+        p_course VARCHAR2,
+        p_sem NUMBER
+    ) IS
+        SELECT member_name, join_date
+        FROM lib_member
+        WHERE UPPER(course) = UPPER(p_course)
+        AND semester = p_sem;
+
+BEGIN
+    FOR r IN c_mem('&course', &semester)
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            r.member_name || ' | ' ||
+            TO_CHAR(r.join_date, 'DD-MON-YYYY')
+        );
+    END LOOP;
+END;
+/
+
+
+-------------------- Q5 --------------------
+-- File: 51_Section3Q5.sql
+-- Parameter has DEFAULT value Database.
+-- Open once without argument and once with Networking.
+
+DECLARE
+    CURSOR c_book(
+        p_cat VARCHAR2 DEFAULT 'Database'
+    ) IS
+        SELECT book_id, title, price
+        FROM book
+        WHERE UPPER(category) = UPPER(p_cat);
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(
+        '--- DEFAULT: DATABASE ---'
+    );
+
+    FOR r IN c_book
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            r.book_id || ' | ' ||
+            r.title || ' | ' ||
+            r.price
+        );
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE(
+        '--- NETWORKING ---'
+    );
+
+    FOR r IN c_book('Networking')
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            r.book_id || ' | ' ||
+            r.title || ' | ' ||
+            r.price
+        );
+    END LOOP;
+END;
+/
+
+
+-------------------- Q6 --------------------
+-- File: 51_Section3Q6.sql
+-- Accept member id and use three-table join.
+
+DECLARE
+    CURSOR c_issue(p_member_id NUMBER) IS
+        SELECT m.member_name,
+               b.title,
+               bi.issue_date
+        FROM lib_member m, book_issue bi, book b
+        WHERE m.member_id = bi.member_id
+        AND b.book_id = bi.book_id
+        AND m.member_id = p_member_id;
+
+BEGIN
+    FOR r IN c_issue(&member_id)
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            'Member: ' || r.member_name ||
+            ' | Book: ' || r.title ||
+            ' | Issue Date: ' ||
+            TO_CHAR(r.issue_date, 'DD-MON-YYYY')
+        );
+    END LOOP;
+END;
+/
+
+
+-------------------- Q7 --------------------
+-- File: 51_Section3Q7.sql
+-- Simple outer cursor + parameterised inner cursor.
+
+DECLARE
+    CURSOR c_pub IS
+        SELECT pub_id, pub_name
+        FROM publisher;
+
+    CURSOR c_book(p_pub_id NUMBER) IS
+        SELECT title, price
+        FROM book
+        WHERE pub_id = p_pub_id;
+
+BEGIN
+    FOR p IN c_pub
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            'Publisher: ' || p.pub_name
+        );
+
+        FOR b IN c_book(p.pub_id)
+        LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                '    ' || b.title ||
+                ' | Price: ' || b.price
+            );
+        END LOOP;
+    END LOOP;
+END;
+/
+
+
+-------------------- Q8 --------------------
+-- File: 51_Section3Q8.sql
+-- Use BOOLEAN flag.
+-- Do not check cursor %ROWCOUNT after the FOR loop.
+
+DECLARE
+    CURSOR c_pub(p_country VARCHAR2) IS
+        SELECT pub_name, city
+        FROM publisher
+        WHERE UPPER(country) = UPPER(p_country);
+
+    v_found BOOLEAN := FALSE;
+
+BEGIN
+    FOR r IN c_pub('&country')
+    LOOP
+        v_found := TRUE;
+
+        DBMS_OUTPUT.PUT_LINE(
+            r.pub_name || ' | ' || r.city
+        );
+    END LOOP;
+
+    IF NOT v_found THEN
+        DBMS_OUTPUT.PUT_LINE(
+            'No publisher found in &country'
+        );
+    END IF;
+
+    -- %ROWCOUNT cannot be checked after a cursor FOR loop
+    -- because the cursor is automatically opened and closed.
+END;
+/
+
+
+-------------------- Q9 --------------------
+-- File: 51_Section3Q9.sql
+-- Accept month number and search issues in 2026.
+
+DECLARE
+    CURSOR c_issue(p_month NUMBER) IS
+        SELECT bi.issue_id,
+               b.title,
+               bi.issue_date
+        FROM book_issue bi, book b
+        WHERE bi.book_id = b.book_id
+        AND EXTRACT(MONTH FROM bi.issue_date) = p_month
+        AND EXTRACT(YEAR FROM bi.issue_date) = 2026;
+
+BEGIN
+    FOR r IN c_issue(&month_no)
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            r.issue_id || ' | ' ||
+            r.title || ' | ' ||
+            TO_CHAR(r.issue_date, 'DD-MON-YYYY')
+        );
+    END LOOP;
+END;
+/
+
+
+-------------------- Q10 --------------------
+-- File: 51_Section3Q10.sql
+-- Accept number of days.
+-- Fine = Rs. 2 per overdue day.
+
+DECLARE
+    CURSOR c_issue(p_days NUMBER) IS
+        SELECT issue_id,
+               book_id,
+               issue_date
+        FROM book_issue
+        WHERE return_date IS NULL
+        AND TRUNC(SYSDATE) - issue_date > p_days;
+
+    v_days NUMBER;
+    v_fine NUMBER;
+    v_total NUMBER := 0;
+
+BEGIN
+    FOR r IN c_issue(&days)
+    LOOP
+        v_days := TRUNC(SYSDATE) - r.issue_date;
+        v_fine := v_days * 2;
+        v_total := v_total + v_fine;
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Issue ID: ' || r.issue_id ||
+            ' | Book ID: ' || r.book_id ||
+            ' | Overdue Days: ' || v_days ||
+            ' | Fine: Rs. ' || v_fine
+        );
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Total Fine Payable: Rs. ' || v_total
+    );
+END;
+/
+
+
+-------------------- Q11 --------------------
+-- File: 51_Section3Q11.sql
+-- Increase price by 10% using WHERE CURRENT OF.
+
+DECLARE
+    CURSOR c_book(p_cat VARCHAR2) IS
+        SELECT book_id, title, price
+        FROM book
+        WHERE UPPER(category) = UPPER(p_cat)
+        FOR UPDATE;
+
+    v_old_price NUMBER;
+    v_new_price NUMBER;
+
+BEGIN
+    FOR r IN c_book('&category')
+    LOOP
+        v_old_price := r.price;
+        v_new_price := r.price * 1.10;
+
+        UPDATE book
+        SET price = v_new_price
+        WHERE CURRENT OF c_book;
+
+        DBMS_OUTPUT.PUT_LINE(
+            r.title ||
+            ' | Old Price: ' || v_old_price ||
+            ' | New Price: ' || v_new_price
+        );
+    END LOOP;
+
+    COMMIT;
+END;
+/
+
+
+-------------------- Q12 --------------------
+-- File: 51_Section3Q12.sql
+-- Accept a single letter and handle upper/lower case.
+
+DECLARE
+    CURSOR c_mem(p_letter VARCHAR2) IS
+        SELECT member_id, member_name, course
+        FROM lib_member
+        WHERE UPPER(member_name) LIKE UPPER(p_letter) || '%';
+
+BEGIN
+    FOR r IN c_mem('&letter')
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            r.member_id || ' | ' ||
+            r.member_name || ' | ' ||
+            r.course
+        );
+    END LOOP;
+END;
+/
+
+
+============================================================
+SECTION 4 - TRACE, DEBUG AND SHORT ANSWER
+============================================================
+
+-------------------- Q1 --------------------
+-- Original issue:
+-- c_book is a parameterised cursor used by a cursor FOR loop.
+-- The FOR loop automatically opens and closes the cursor.
+-- Therefore c_book%ROWCOUNT after the loop and CLOSE c_book
+-- are invalid because the cursor has already been closed.
+--
+-- The IF c_book%ROWCOUNT = 0 line raises ORA-01001.
+-- The following CLOSE c_book would also be invalid if reached.
+--
+-- Correct version:
+
+DECLARE
+    CURSOR c_book (p_cat VARCHAR2) IS
+        SELECT book_id, title
+        FROM book
+        WHERE category = p_cat;
+
+    v_count NUMBER := 0;
+
+BEGIN
+    FOR r IN c_book('Database')
+    LOOP
+        v_count := v_count + 1;
+
+        DBMS_OUTPUT.PUT_LINE(
+            r.book_id || ' - ' || r.title
+        );
+    END LOOP;
+
+    IF v_count = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No books found');
+    END IF;
+END;
+/
+
+
+-------------------- Q2 --------------------
+-- The parameter declaration below is invalid:
+-- VARCHAR2(20) cannot be used in a cursor formal parameter.
+--
+-- Wrong:
+-- CURSOR c_mem (p_course VARCHAR2(20)) IS
+--
+-- Correct one line:
+-- CURSOR c_mem (p_course VARCHAR2) IS
+
+
+-------------------- Q3 --------------------
+-- The cursor selects books where price > 600.
+-- The books are:
+-- 101 Database System Concepts
+-- 103 Operating System Design
+-- 104 Java Complete Reference
+-- 106 Computer Networks
+-- 108 Oracle SQL Handbook
+-- 111 Advanced DBMS
+-- 112 Cloud Computing Essentials
+--
+-- Output:
+-- 1 : Database System Concepts
+-- 2 : Operating System Design
+-- 3 : Java Complete Reference
+-- 4 : Computer Networks
+-- 5 : Oracle SQL Handbook
+-- 6 : Advanced DBMS
+-- 7 : Cloud Computing Essentials
+-- Final ROWCOUNT = 7
+--
+-- The first PUT_LINE is inside the loop and shows the ROWCOUNT
+-- at that successful FETCH. The final PUT_LINE is after the loop,
+-- after all qualifying rows have been fetched. Therefore the
+-- final ROWCOUNT is the total number of qualifying rows.
+
+
+-------------------- Q4 --------------------
+-- If a parameterised cursor has a required parameter and it is
+-- opened without an argument, Oracle raises an error because the
+-- required parameter was not supplied.
+--
+-- This is an execution-time error when the OPEN statement runs.
+--
+-- If the cursor parameter has a DEFAULT value, the default value
+-- is used when the cursor is opened without an argument.
+--
+-- Example:
+--
+-- CURSOR c_book(
+--     p_cat VARCHAR2 DEFAULT 'Database'
+-- ) IS
+--     SELECT * FROM book WHERE category = p_cat;
+--
+-- OPEN c_book;
+--
+-- Here Oracle uses 'Database' automatically.
+
+
+-------------------- Q5 --------------------
+-- Comparison:
+--
+-- Implicit Cursor:
+-- Who declares it: Oracle
+-- Who opens/closes it: Oracle
+-- Reused with different values: Not applicable
+-- Best choice: Simple INSERT, UPDATE, DELETE or SELECT INTO.
+--
+-- Explicit Simple Cursor:
+-- Who declares it: Programmer
+-- Who opens/closes it: Programmer
+-- Reused with different values: No parameters, so fixed query
+-- Best choice: Processing multiple rows from one fixed query.
+--
+-- Parameterised Cursor:
+-- Who declares it: Programmer
+-- Who opens/closes it: Programmer or cursor FOR loop
+-- Reused with different values: Yes
+-- Best choice: Same query required for different input values.
+
+
+-------------------- Q6 --------------------
+-- %FOUND:
+-- Raises ORA-01001 when used on a cursor that has not been opened.
+-- Example: DBMS_OUTPUT.PUT_LINE(c_book%FOUND);
+--
+-- %NOTFOUND:
+-- Raises ORA-01001 when used on an unopened explicit cursor.
+-- Example: IF c_book%NOTFOUND THEN ...
+--
+-- %ROWCOUNT:
+-- Raises ORA-01001 when used on an unopened explicit cursor.
+-- Example: DBMS_OUTPUT.PUT_LINE(c_book%ROWCOUNT);
+--
+-- %ISOPEN:
+-- This is the exception. It can be checked before OPEN.
+-- It returns FALSE when the cursor is not open.
+-- Example:
+-- IF c_book%ISOPEN THEN
+--     ...
+-- END IF;
+
+
+============================================================
+FILE NAMES FOR ROLL NO. 51
+============================================================
+
+51_Section2Q1.sql
+51_Section2Q2.sql
+51_Section2Q3.sql
+51_Section2Q4.sql
+51_Section2Q5.sql
+51_Section2Q6.sql
+51_Section2Q7.sql
+51_Section2Q8.sql
+51_Section2Q9.sql
+51_Section2Q10.sql
+51_Section2Q11.sql
+51_Section2Q12.sql
+
+51_Section3Q1.sql
+51_Section3Q2.sql
+51_Section3Q3.sql
+51_Section3Q4.sql
+51_Section3Q5.sql
+51_Section3Q6.sql
+51_Section3Q7.sql
+51_Section3Q8.sql
+51_Section3Q9.sql
+51_Section3Q10.sql
+51_Section3Q11.sql
+51_Section3Q12.sql
+
+============================================================
+END OF FULL ASSIGNMENT
+============================================================
